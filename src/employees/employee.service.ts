@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model,Types } from 'mongoose';
+import {faker} from '@faker-js/faker';
 import mongoose from 'mongoose';
 import { SkillsService } from '../skills/skills.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
