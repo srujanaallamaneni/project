@@ -332,6 +332,66 @@ export class EmployeeService {
     totalPages,
     data,
   };
+} 
+
+async generateDummyEmployeesBulk(count: number): Promise<Employee[]> {
+  const allSkills = await this.skillsService.getAll(); // fetch all skills from DB
+  const employees: any[] = [];
+
+  const lastEmployee = await this.employeeModel.findOne().sort({ empNumber: -1 });
+  let lastNumber = lastEmployee ? parseInt(lastEmployee.empNumber.replace('EMP', ''), 10) : 0;
+
+  for (let i = 0; i < count; i++) {
+    const empNumber = 'EMP' + String(lastNumber + i + 1).padStart(3, '0');
+
+    const name = faker.person.fullName();
+    const email = faker.internet.email().toLowerCase().replace(/[^a-z0-9@.]/g, '');
+    const position = faker.person.jobTitle();
+    const hireDate = faker.date.past({ years: 5 }).toISOString().split('T')[0];
+
+    const rawPassword = `Password@${Math.floor(Math.random() * 9000 + 1000)}`;
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    const engagementScore = Math.floor(Math.random() * 101);
+
+    const employeeSkills: { skillId: any; proficiency: number }[] = [];
+    if (allSkills.length > 0) { // only if skills exist
+      const numberOfSkills = faker.number.int({ min: 1, max: 3 });
+      for (let j = 0; j < numberOfSkills; j++) {
+        const randomSkill = faker.helpers.arrayElement(allSkills) as any;
+
+        // Avoid duplicates
+        if (!employeeSkills.find(s => s.skillId.equals(randomSkill._id))) {
+          employeeSkills.push({
+            skillId: randomSkill._id,
+            proficiency: faker.number.int({ min: 1, max: 10 })
+          });
+        }
+      }
+    }
+    // ------------------------------------------------
+
+    employees.push({
+      empNumber,
+      name,
+      email,
+      position,
+      hireDate,
+      password: hashedPassword,
+      role: 'employee',
+      engagementScore,
+      skills: employeeSkills,
+    });
+  }
+
+  return await this.employeeModel.insertMany(employees) as any[];
 }
 
+
+
+
+
+
+
 }
+
+
