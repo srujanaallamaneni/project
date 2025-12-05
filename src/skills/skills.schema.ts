@@ -8,6 +8,7 @@ export class Skill extends Document{
 
     @Prop({required:true})
     description:string;
+    
 }
 
 
