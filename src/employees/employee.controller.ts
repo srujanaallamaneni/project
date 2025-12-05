@@ -82,6 +82,15 @@ export class EmployeeController {
   // async createBulk(@Body() body:CreateEmployeeDto[]){
   //   return await this.employeeService.createBulk(body)
   // }
+
+  @Post('dummy-bulk/:count')
+async dummyBulk(@Param('count') count: number) {
+  const safeCount = Math.max(1, Math.min(Number(count), 500)); // limit to 500 safety
+  return this.employeeService.generateDummyEmployeesBulk(safeCount);
+}
+
+
+  
   
   
 
