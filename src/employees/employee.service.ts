@@ -110,73 +110,60 @@ export class EmployeeService {
 
   //ranking by difficulty-task2
   async getEmployeeBySKillDifficulty(): Promise<any[]> {
-    return this.employeeModel.aggregate([
-      {
-        $unwind: "$skills"
-      },
-      {
-        $lookup:{
-          from:"skills",
-          localField:"skills.skillId",
-          foreignField:"_id",
-          as:"skillDetails"
-        }
-      },
-      {
-        $unwind: "$skillDetails"
-      },
-      
-      {
-        $group:{
-          _id:"$skills.skillId",
-          skillName:{$first:"$skillDetails.name"},
-          avgProficiency:{$avg:"$skills.proficiency"},
-          employees:{
-            $push:{
-              name:"$name",
-              proficiency:"$skills.proficiency"
-            }
+  return this.employeeModel.aggregate([
+    { $unwind: "$skills" },
+
+    {
+      $lookup: {
+        from: "skills",
+        localField: "skills.skillId",
+        foreignField: "_id",
+        as: "skillDetails"
+      }
+    },
+
+    { $unwind: "$skillDetails" },
+
+    {
+      $group: {
+        _id: "$skills.skillId",
+        skillName: { $first: "$skillDetails.name" },
+        avgProficiency: { $avg: "$skills.proficiency" },
+        employees: {
+          $push: {
+            name: "$name",
+            proficiency: "$skills.proficiency"
           }
-        }
-      },
-      {
-        $addFields:{ //skiname,prof,diffi
-          difficulty:{
-            $subtract:[100,{$multiply:["$avgProficiency",5]}]
-          }
-          }
-        },
-      {
-        $addFields: {
-          topEmployees: {
-            $slice: [
-              {
-                $sortArray: {
-                  input: "$employees",
-                  sortBy: { proficiency: -1
-                   }
-                }
-              },
-              5
-            ]
-          }
-        }
-      },
-      {
-        $sort:{
-          difficulty:-1
-        }
-      },
-      {
-        $project:{
-          _id:0,
-          skillName:1,
-          difficulty:1,
-          topEmployees:1
         }
       }
-    ]);
-  }
+    },
+
+    {
+      $addFields: {
+        difficulty: {
+          $subtract: [100, { $multiply: ["$avgProficiency", 5] }]
+        },
+        employees: {
+          $sortArray: {
+            input: "$employees",
+            sortBy: { proficiency: -1 }
+          }
+        }
+      }
+    },
+
+    { $sort: { difficulty: -1 } },
+
+    {
+      $project: {
+        _id: 0,
+        skillName: 1,
+        difficulty: 1,
+        employees: 1
+      }
+    }
+  ]).allowDiskUse(true);
+}
 
 
 
@@ -338,8 +325,21 @@ async generateDummyEmployeesBulk(count: number): Promise<Employee[]> {
   const allSkills = await this.skillsService.getAll(); // fetch all skills from DB
   const employees: any[] = [];
 
-  const lastEmployee = await this.employeeModel.findOne().sort({ empNumber: -1 });
-  let lastNumber = lastEmployee ? parseInt(lastEmployee.empNumber.replace('EMP', ''), 10) : 0;
+  const lastEmployeeAgg = await this.employeeModel.aggregate([
+  {
+    $addFields: {
+      empNumberNumeric: {
+        $toInt: { $substr: ["$empNumber", 3, -1] } // convert EMP123 → 123
+      }
+    }
+  },
+  { $sort: { empNumberNumeric: -1 } },
+  { $limit: 1 }
+]);
+
+const lastEmployee = lastEmployeeAgg[0];
+let lastNumber = lastEmployee ? lastEmployee.empNumberNumeric : 0;
+
 
   for (let i = 0; i < count; i++) {
     const empNumber = 'EMP' + String(lastNumber + i + 1).padStart(3, '0');
@@ -354,20 +354,14 @@ async generateDummyEmployeesBulk(count: number): Promise<Employee[]> {
     const engagementScore = Math.floor(Math.random() * 101);
 
     const employeeSkills: { skillId: any; proficiency: number }[] = [];
-    if (allSkills.length > 0) { // only if skills exist
-      const numberOfSkills = faker.number.int({ min: 1, max: 3 });
-      for (let j = 0; j < numberOfSkills; j++) {
-        const randomSkill = faker.helpers.arrayElement(allSkills) as any;
 
-        // Avoid duplicates
-        if (!employeeSkills.find(s => s.skillId.equals(randomSkill._id))) {
-          employeeSkills.push({
-            skillId: randomSkill._id,
-            proficiency: faker.number.int({ min: 1, max: 10 })
-          });
-        }
-      }
-    }
+for (const skill of allSkills) {
+  employeeSkills.push({
+    skillId: skill._id,
+    proficiency: faker.number.int({ min: 1, max: 10 })
+  });
+}
+
     // ------------------------------------------------
 
     employees.push({
