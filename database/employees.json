@@ -1,0 +1,87 @@
+[
+  {
+    "empNumber": "EMP001",
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "position": "Frontend Developer",
+    "hireDate": "2025-11-15T14:00:00.000Z",
+    "skills": [
+      "7c0835cf-84d2-4562-b1f2-11ab103bd4f7"
+    ],
+    "role": "employee",
+    "password": "$2b$10$Z5ZSNcQX9bqX0hGxa.Bo6et4CAXZ2ACvdv0vb9KdZ0BUpJR/P364G",
+    "engagementScore": 0,
+    "id": "67a4fe17-a288-4763-81e3-35bb2456d8ef"
+  },
+  {
+    "empNumber": "EMP002",
+    "name": "Harley Davidson",
+    "email": "davidson123@gmail.com",
+    "position": "Web Developer",
+    "hireDate": "2025-11-17",
+    "skills": [
+      "f6bc9815-cd63-4c38-b472-12bf30d5b680"
+    ],
+    "role": "admin",
+    "password": "$2b$10$trb1cFHFrw9YEdN6RCLCYeIgDdWofopCiEUZGXL2AGZ3U/p75pYRq",
+    "engagementScore": 4,
+    "id": "25011da2-a589-4398-98eb-f1a7c3162236"
+  },
+  {
+    "empNumber": "EMP003",
+    "name": "Carol Danvers",
+    "email": "caroldanvers@gmail.com",
+    "position": "Full Stack Engineer",
+    "hireDate": "2023-08-20T00:00:00.000Z",
+    "skills": [
+      "7c0835cf-84d2-4562-b1f2-11ab103bd4f7"
+    ],
+    "role": "admin",
+    "password": "$2b$10$ClOXat2z0RY9cChNE/oIjeZsIBV/orU3AGdm1c1FmZNLWkLbmbxja",
+    "engagementScore": 5,
+    "id": "478f7495-1cfd-456a-ab44-150d14f21f92"
+  },
+  {
+    "empNumber": "EMP004",
+    "name": "nick",
+    "email": "nicknikhill1212@gmail.com",
+    "position": "Full Stack Engineer",
+    "hireDate": "2023-08-20T00:00:00.000Z",
+    "skills": [
+      "f6bc9815-cd63-4c38-b472-12bf30d5b680"
+    ],
+    "role": "admin",
+    "password": "$2b$10$A4.o1MjhmzS1C1TXkkoSFejlV8FMWuvqAB3F/DpVw3Y1I1JkF.AMe",
+    "engagementScore": 5,
+    "id": "b615fe8a-15d1-4e6a-8eae-103208193941"
+  },
+  {
+    "empNumber": "EMP005",
+    "name": "john",
+    "email": "john@gmail.com",
+    "position": "Backend Engineer",
+    "hireDate": "2023-08-20T00:00:00.000Z",
+    "skills": [
+      "41ece198-1e98-42fb-adc8-4695e0e60d9f"
+    ],
+    "role": "admin",
+    "password": "$2b$10$nutRDscANMuMsv0SDooideuMjzVGWHgRLN6T1b19nz9Lam8obI8Xu",
+    "engagementScore": 6,
+    "id": "c3b34b73-2833-4753-bbb5-0cbf2786a19c"
+  },
+  {
+    "empNumber": "EMP006",
+    "name": "pavan",
+    "email": "pavansai111@gmail.com",
+    "position": "Full Stack Engineer",
+    "hireDate": "2023-08-20T00:00:00.000Z",
+    "skills": [
+      "41ece198-1e98-42fb-adc8-4695e0e60d9f"
+    ],
+    "role": "employee",
+    "password": "$2b$10$b5BV97Liyi3q.T6ZYcDPauvUg4yepkQE/peUTt6LVmgdsaBqGJSvq",
+    "engagementScore": 5,
+    "id": "a730ffa8-6975-446b-9eb7-61a09c712208"
+  }
+  
+]

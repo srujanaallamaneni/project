@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Java",
+    "description": "Difficult language",
+    "id": "7c0835cf-84d2-4562-b1f2-11ab103bd4f7"
+  },
+  {
+    "name": "Python",
+    "description": "Popular programming language",
+    "id": "f6bc9815-cd63-4c38-b472-12bf30d5b680"
+  },
+  {
+    "name": "NESTJS",
+    "description": "Backend",
+    "id": "41ece198-1e98-42fb-adc8-4695e0e60d9f"
+  }
+]
