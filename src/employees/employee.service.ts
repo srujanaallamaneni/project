@@ -45,56 +45,61 @@ export class EmployeeService {
   //new-Skill Sorted by Avg Engagement-taks1
   async getSkillEngagementReport(): Promise<any[]> {
   return this.employeeModel.aggregate<any>([
-    // Step 1: Unwind skills array
-    
+    // Step 1: Unwind skills
+    { $unwind: "$skills" },
 
-    
+    // Step 2: Lookup skill details
     {
       $lookup: {
         from: "skills",
         localField: "skills.skillId",
         foreignField: "_id",
         as: "skillDetails",
+        pipeline: [{ $project: { name: 1 } }],
       },
     },
 
-    // Step 3: Unwind skillDetails (always contains 1 matched skill)
     { $unwind: "$skillDetails" },
 
-    // Step 4: Group by skill
+    // Step 3: Group ONLY AGGREGATES (no employees array!)
     {
       $group: {
-        _id: "$skillDetails._id",
+        _id: "$skills.skillId",
         skillName: { $first: "$skillDetails.name" },
-
-        employees: {
-          $push: {
-            _id: "$_id",
-            name: "$name",
-            engagementScore: "$engagementScore",
-          },
-        },
-
         avgEngagement: { $avg: "$engagementScore" },
       },
     },
 
-    // Step 5: Sort employees within each skill
+    // Step 4: Sort skills by avgEngagement DESC
+    { $sort: { avgEngagement: -1 } },
+
+    // Step 5: For each skill, fetch TOP employees separately
     {
-      $addFields: {
-        employees: {
-          $sortArray: {
-            input: "$employees",
-            sortBy: { engagementScore: -1 },
+      $lookup: {
+        from: "employees",
+        let: { skillId: "$_id" },
+        pipeline: [
+          { $unwind: "$skills" },
+          {
+            $match: {
+              $expr: { $eq: ["$skills.skillId", "$$skillId"] },
+            },
           },
-        },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              engagementScore: 1,
+            },
+          },
+          { $sort: { engagementScore: -1 } },
+          { $limit: 1000 }, // <= safe limit; change as needed
+        ],
+        as: "employees",
       },
     },
 
-    // Step 6: Sort skills by avg engagement
-    { $sort: { avgEngagement: -1 } },
-
-    // Cleanup
+    // Final cleanup
     {
       $project: {
         _id: 0,
@@ -104,31 +109,36 @@ export class EmployeeService {
         employees: 1,
       },
     },
-  ]);
+  ], { allowDiskUse: true });
 }
 
 
+
   //ranking by difficulty-task2
-  async getEmployeeBySKillDifficulty(): Promise<any[]> {
+ async getEmployeeBySkillDifficulty() {
   return this.employeeModel.aggregate([
+    // Stage 1: Unwind skills array
     { $unwind: "$skills" },
 
+    // Stage 2: Efficient lookup for skill name
     {
       $lookup: {
         from: "skills",
         localField: "skills.skillId",
         foreignField: "_id",
-        as: "skillDetails"
+        as: "skillDetails",
+        pipeline: [{ $project: { name: 1 } }]
       }
     },
-
     { $unwind: "$skillDetails" },
 
+    // Stage 3: Group by skill (no sort yet—faster for large data)
     {
       $group: {
         _id: "$skills.skillId",
         skillName: { $first: "$skillDetails.name" },
-        avgProficiency: { $avg: "$skills.proficiency" },
+        totalProficiency: { $sum: "$skills.proficiency" },
+        employeeCount: { $sum: 1 },
         employees: {
           $push: {
             name: "$name",
@@ -138,11 +148,27 @@ export class EmployeeService {
       }
     },
 
+    // Stage 4: Compute average proficiency
+    {
+      $addFields: {
+        avgProficiency: {
+          $divide: ["$totalProficiency", "$employeeCount"]
+        }
+      }
+    },
+
+    // Stage 5: Compute difficulty
     {
       $addFields: {
         difficulty: {
           $subtract: [100, { $multiply: ["$avgProficiency", 5] }]
-        },
+        }
+      }
+    },
+
+    // Stage 6: Sort employees array per skill (efficient, per-group sort)
+    {
+      $addFields: {
         employees: {
           $sortArray: {
             input: "$employees",
@@ -152,8 +178,10 @@ export class EmployeeService {
       }
     },
 
+    // Stage 7: Final sort by difficulty descending
     { $sort: { difficulty: -1 } },
 
+    // Stage 8: Project final fields (clean up)
     {
       $project: {
         _id: 0,
@@ -162,8 +190,10 @@ export class EmployeeService {
         employees: 1
       }
     }
-  ]).allowDiskUse(true);
+
+  ], { allowDiskUse: true }); // Safety net for large groups
 }
+
 
 
 
