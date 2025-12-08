@@ -1,5 +1,6 @@
 import { IsString, IsEmail, IsArray, IsOptional, IsNumber, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {Type} from 'class-transformer';
 
 export class CreateEmployeeDto {
   @ApiProperty({ example: 'EMP001', description: 'Unique employee number' })
@@ -18,11 +19,11 @@ export class CreateEmployeeDto {
   @IsString()
   position: string;
 
-  @ApiProperty({ example: '2025-01-01', description: 'Hire date in ISO string format' })
+  @ApiProperty({ example: '2025-01-01', description: 'Hire date in ISO string format',type:String })
   @IsString()
   hireDate: string;
 
-  @ApiPropertyOptional({ example: ['JavaScript', 'NestJS'], description: 'Skills of the employee' })
+  @ApiPropertyOptional({ example: ['JavaScript', 'NestJS'], description: 'Array of skills of the employee' })
   @IsArray()
   @IsOptional()
   skills?: string[];
@@ -38,6 +39,7 @@ export class CreateEmployeeDto {
 
   @ApiPropertyOptional({ example: 85, description: 'Engagement score of the employee' })
   @IsOptional()
+  @Type(()=>Number)
   @IsNumber()
   engagementScore?: number;
 }
