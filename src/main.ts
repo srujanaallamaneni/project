@@ -9,6 +9,7 @@ async function bootstrap() {
   .setTitle('Employee Crud Api')
   .setDescription('Employee Crud Api description')
   .setVersion('1.0')
+  .addBearerAuth()
   .build();
   const document=SwaggerModule.createDocument(app,swaggerConfig);
   SwaggerModule.setup('api',app,document);
