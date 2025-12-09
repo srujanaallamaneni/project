@@ -26,14 +26,14 @@ import { APP_GUARD } from '@nestjs/core';
   providers: [
     AuthService,
     JwtStrategy,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard, // Makes JwtAuthGuard global
-    // },
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: RolesGuard, // Makes RolesGuard global
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard, // Makes JwtAuthGuard global
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard, // Makes RolesGuard global
+    },
   ],
 })
 export class AuthModule {}
