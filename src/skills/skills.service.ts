@@ -65,28 +65,29 @@ export class SkillsService {
     return deletedSkill;
   }
   //aggregation 
-  async getUnassignedSkills() {
-    return await this.skillModel.aggregate([
-      {
-        $lookup: {
-          from: 'employees',
-          localField: '_id',
-          foreignField: 'skills',
-          as: 'employees',
-        },
-      },
-      {
-        $match: {
-          employees: { $size: 0 },
-        },
-      },
-      {
-        $project: {
-          name: 1,
-        },
-      },
-    ]);
-  }
+ async getUnassignedSkills() {
+  return this.skillModel.aggregate([
+    {
+      $lookup: {
+        from: "employees",
+        let: { skillId: "$_id" },
+        pipeline: [
+          { $unwind: "$skills" },
+          {
+            $match: {
+              $expr: { $eq: ["$skills.skillId", "$$skillId"] }
+            }
+          },
+          { $limit: 1 }
+        ],
+        as: "employees"
+      }
+    },
+    { $match: { employees: { $size: 0 } } },
+    { $project: { name: 1 } }
+  ]);
+}
+
 
   async getTotalSkills() {
   const result = await this.skillModel.aggregate([
