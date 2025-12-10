@@ -148,6 +148,72 @@ export class EmployeeService {
 }
 
 
+//engagementreports alternative
+// async getSkillEngagementReport(): Promise<any[]> {
+//   return this.employeeModel.aggregate([
+//     // Step 1: Unwind employee skills
+//     { $unwind: "$skills" },
+
+//     // Step 2: Group employees by skillId
+//     {
+//       $group: {
+//         _id: "$skills.skillId",
+//         avgEngagement: { $avg: "$engagementScore" },
+//         employees: {
+//           $push: {
+//             _id: "$_id",
+//             name: "$name",
+//             engagementScore: "$engagementScore"
+//           }
+//         }
+//       }
+//     },
+
+//     // Step 3: Sort employees inside each skill by engagementScore desc
+//     {
+//       $addFields: {
+//         employees: {
+//           $sortArray: {
+//             input: "$employees",
+//             sortBy: { engagementScore: -1 }
+//           }
+//         }
+//       }
+//     },
+
+//     // Step 4: Lookup skill name
+//     {
+//       $lookup: {
+//         from: "skills",
+//         localField: "_id",
+//         foreignField: "_id",
+//         as: "skillDetails",
+//         pipeline: [
+//           { $project: { name: 1 } }
+//         ]
+//       }
+//     },
+
+//     // Step 5: Unwind skillDetails
+//     { $unwind: "$skillDetails" },
+
+//     // Step 6: Final shape
+//     {
+//       $project: {
+//         _id: 0,
+//         skillName: "$skillDetails.name",
+//         avgEngagement: 1,
+//         employees: 1
+//       }
+//     },
+
+//     // Step 7: Sort skills by avgEngagement desc
+//     { $sort: { avgEngagement: -1 } }
+//   ]);
+// }
+
+
+
 
 
   //ranking by difficulty-task2
