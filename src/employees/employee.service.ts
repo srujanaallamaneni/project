@@ -44,73 +44,109 @@ export class EmployeeService {
 
   //new-Skill Sorted by Avg Engagement-taks1
   async getSkillEngagementReport(): Promise<any[]> {
-  return this.employeeModel.aggregate<any>([
-    // Step 1: Unwind skills
+  return this.employeeModel.aggregate([
+    // Unwind once, then use facet to reuse the dataset
     { $unwind: "$skills" },
 
-    // Step 2: Lookup skill details
     {
-      $lookup: {
-        from: "skills",
-        localField: "skills.skillId",
-        foreignField: "_id",
-        as: "skillDetails",
-        pipeline: [{ $project: { name: 1 } }],
-      },
-    },
-
-    { $unwind: "$skillDetails" },
-
-    // Step 3: Group ONLY AGGREGATES (no employees array!)
-    {
-      $group: {
-        _id: "$skills.skillId",
-        skillName: { $first: "$skillDetails.name" },
-        avgEngagement: { $avg: "$engagementScore" },
-      },
-    },
-
-    // Step 4: Sort skills by avgEngagement DESC
-    { $sort: { avgEngagement: -1 } },
-
-    // Step 5: For each skill, fetch TOP employees separately
-    {
-      $lookup: {
-        from: "employees",
-        let: { skillId: "$_id" },
-        pipeline: [
-          { $unwind: "$skills" },
+      $facet: {
+        
+        skillStats: [
           {
-            $match: {
-              $expr: { $eq: ["$skills.skillId", "$$skillId"] },
-            },
+            $lookup: {
+              from: "skills",
+              localField: "skills.skillId",
+              foreignField: "_id",
+              as: "skillDetails",
+              pipeline: [{ $project: { name: 1 } }],
+            }
           },
+          { $unwind: "$skillDetails" },
+          {
+            $group: {
+              _id: "$skills.skillId",
+              skillName: { $first: "$skillDetails.name" },
+              avgEngagement: { $avg: "$engagementScore" }
+            }
+          },
+          { $sort: { avgEngagement: -1 } }
+        ],
+
+        
+        employeeLists: [
+          {
+            $group: {
+              _id: "$skills.skillId",
+              employees: {
+                $push: {
+                  _id: "$_id",
+                  name: "$name",
+                  engagementScore: "$engagementScore"
+                }
+              }
+            }
+          },
+          // Sort employees inside each skill
           {
             $project: {
-              _id: 1,
-              name: 1,
-              engagementScore: 1,
-            },
-          },
-          { $sort: { engagementScore: -1 } },
-          { $limit: 1000 }, // <= safe limit; change as needed
-        ],
-        as: "employees",
-      },
+              employees: {
+                $slice: [
+                  {
+                    $sortArray: {
+                      input: "$employees",
+                      sortBy: { engagementScore: -1 }
+                    }
+                  },
+                  1000 // take top N employees per skill
+                ]
+              }
+            }
+          }
+        ]
+      }
     },
 
-    // Final cleanup
+    
     {
       $project: {
-        _id: 0,
-        skillId: "$_id",
-        skillName: 1,
-        avgEngagement: 1,
-        employees: 1,
-      },
+        data: {
+          $map: {
+            input: "$skillStats",
+            as: "s",
+            in: {
+              skillId: "$$s._id",
+              skillName: "$$s.skillName",
+              avgEngagement: "$$s.avgEngagement",
+              employees: {
+                $let: {
+                  vars: {
+                    matchEmp: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$employeeLists",
+                            cond: { $eq: ["$$this._id", "$$s._id"] }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  },
+                  in: "$$matchEmp.employees"
+                }
+              }
+            }
+          }
+        }
+      }
     },
+
+    // Flatten result
+    { $unwind: "$data" },
+    { $replaceRoot: { newRoot: "$data" } }
   ], { allowDiskUse: true });
 }
+
 
 
 
