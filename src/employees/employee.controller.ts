@@ -111,8 +111,8 @@ export class EmployeeController {
 
 
   // @Post('bulk')
-  //@ApiOperation({summary:'Create multiple employees in bulk'})
-  //@ApiResponse({status:201,description:'Employees created successfully in bulk})
+  // @ApiOperation({summary:'Create multiple employees in bulk'})
+  // @ApiResponse({status:201,description:'Employees created successfully in bulk})
   // async createBulk(@Body() body:CreateEmployeeDto[]){
   //   return await this.employeeService.createBulk(body)
   // }
@@ -125,11 +125,6 @@ async dummyBulk(@Param('count') count: number) {
   const safeCount = Math.max(1, Math.min(Number(count), 500)); // limit to 500 safety
   return this.employeeService.generateDummyEmployeesBulk(safeCount);
 }
-
-
-  
-  
-  
 
 
   @Post()
