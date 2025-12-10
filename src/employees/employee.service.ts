@@ -296,6 +296,94 @@ export class EmployeeService {
   ], { allowDiskUse: true }); // Safety net for large groups
 }
 
+//alternative for getEmployeeBySkillDifficulty
+//async getEmployeeBySkillDifficulty() {
+//   return this.employeeModel.aggregate([
+
+//     // 1) Expand skills
+//     { $unwind: "$skills" },
+
+//     // 2) Join skill names (no pipeline = faster)
+//     {
+//       $lookup: {
+//         from: "skills",
+//         localField: "skills.skillId",
+//         foreignField: "_id",
+//         as: "skillInfo"
+//       }
+//     },
+//     { $unwind: "$skillInfo" }, // always 1 element
+
+//     // 3) Prepare grouped data per skill
+//     {
+//       $group: {
+//         _id: "$skills.skillId",
+
+//         skillName: { $first: "$skillInfo.name" },
+
+//         // For computing difficulty
+//         totalProficiency: { $sum: "$skills.proficiency" },
+//         employeeCount: { $sum: 1 },
+
+//         // Employee list
+//         employees: {
+//           $push: {
+//             name: "$name",
+//             proficiency: "$skills.proficiency"
+//           }
+//         }
+//       }
+//     },
+
+//     // 4) Compute avgProficiency + difficulty in ONE step (more efficient)
+//     {
+//       $set: {
+//         avgProficiency: {
+//           $divide: ["$totalProficiency", "$employeeCount"]
+//         },
+//         difficulty: {
+//           $subtract: [
+//             100,
+//             {
+//               $multiply: [
+//                 { $divide: ["$totalProficiency", "$employeeCount"] },
+//                 5
+//               ]
+//             }
+//           ]
+//         }
+//       }
+//     },
+
+//     // 5) Sort employees per skill
+//     {
+//       $set: {
+//         employees: {
+//           $sortArray: {
+//             input: "$employees",
+//             sortBy: { proficiency: -1 }
+//           }
+//         }
+//       }
+//     },
+
+//     // 6) Sort skills by difficulty
+//     { $sort: { difficulty: -1 } },
+
+//     // 7) Clean output
+//     {
+//       $project: {
+//         _id: 0,
+//         skillName: 1,
+//         difficulty: 1,
+//         employees: 1
+//       }
+//     }
+
+//   ], { allowDiskUse: true });
+// }
+
+
 
 
 
