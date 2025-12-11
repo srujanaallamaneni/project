@@ -7,6 +7,7 @@ import { SkillsService } from '../skills/skills.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { Employee } from './employee.schema';
+import { Skill } from '../skills/skills.schema'
 import * as bcrypt from 'bcrypt';
 
 
@@ -15,6 +16,8 @@ export class EmployeeService {
   constructor(
     @InjectModel(Employee.name)
     private employeeModel: Model<Employee>,
+    @InjectModel(Skill.name)
+    private skillsModel:Model<Skill>,
     private readonly skillsService: SkillsService,
   ) {}
 
@@ -43,109 +46,183 @@ export class EmployeeService {
   }
 
   //new-Skill Sorted by Avg Engagement-taks1
-  async getSkillEngagementReport(): Promise<any[]> {
-  return this.employeeModel.aggregate([
-    // Unwind once, then use facet to reuse the dataset
-    { $unwind: "$skills" },
+//   async getSkillEngagementReport(): Promise<any[]> {
+//   return this.employeeModel.aggregate([
+//     // Unwind once, then use facet to reuse the dataset
+//     { $unwind: "$skills" },
 
+//     {
+//       $facet: {
+        
+//         skillStats: [
+//           {
+//             $lookup: {
+//               from: "skills",
+//               localField: "skills.skillId",
+//               foreignField: "_id",
+//               as: "skillDetails",
+//               pipeline: [{ $project: { name: 1 } }],
+//             }
+//           },
+//           { $unwind: "$skillDetails" },
+//           {
+//             $group: {
+//               _id: "$skills.skillId",
+//               skillName: { $first: "$skillDetails.name" },
+//               avgEngagement: { $avg: "$engagementScore" }
+//             }
+//           },
+//           { $sort: { avgEngagement: -1 } }
+//         ],
+
+        
+//         employeeLists: [
+//           {
+//             $group: {
+//               _id: "$skills.skillId",
+//               employees: {
+//                 $push: {
+//                   _id: "$_id",
+//                   name: "$name",
+//                   engagementScore: "$engagementScore"
+//                 }
+//               }
+//             }
+//           },
+//           // Sort employees inside each skill
+//           {
+//             $project: {
+//               employees: {
+//                 $slice: [
+//                   {
+//                     $sortArray: {
+//                       input: "$employees",
+//                       sortBy: { engagementScore: -1 }
+//                     }
+//                   },
+//                   1000 // take top N employees per skill
+//                 ]
+//               }
+//             }
+//           }
+//         ]
+//       }
+//     },
+
+    
+//     {
+//       $project: {
+//         data: {
+//           $map: {
+//             input: "$skillStats",
+//             as: "s",
+//             in: {
+//               skillId: "$$s._id",
+//               skillName: "$$s.skillName",
+//               avgEngagement: "$$s.avgEngagement",
+//               employees: {
+//                 $let: {
+//                   vars: {
+//                     matchEmp: {
+//                       $arrayElemAt: [
+//                         {
+//                           $filter: {
+//                             input: "$employeeLists",
+//                             cond: { $eq: ["$$this._id", "$$s._id"] }
+//                           }
+//                         },
+//                         0
+//                       ]
+//                     }
+//                   },
+//                   in: "$$matchEmp.employees"
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//     },
+
+//     // Flatten result
+//     { $unwind: "$data" },
+//     { $replaceRoot: { newRoot: "$data" } }
+//   ], { allowDiskUse: true });
+// }
+
+async getSkillEngagementReport(): Promise<any[]> {
+  return this.skillsModel.aggregate([
+
+    // 1) Join employees who have this skill
     {
-      $facet: {
-        
-        skillStats: [
+      $lookup: {
+        from: "employees",
+        let: { skillId: "$_id" },
+        pipeline: [
+          { $unwind: "$skills" },
           {
-            $lookup: {
-              from: "skills",
-              localField: "skills.skillId",
-              foreignField: "_id",
-              as: "skillDetails",
-              pipeline: [{ $project: { name: 1 } }],
+            $match: {
+              $expr: { $eq: ["$skills.skillId", "$$skillId"] }
             }
           },
-          { $unwind: "$skillDetails" },
-          {
-            $group: {
-              _id: "$skills.skillId",
-              skillName: { $first: "$skillDetails.name" },
-              avgEngagement: { $avg: "$engagementScore" }
-            }
-          },
-          { $sort: { avgEngagement: -1 } }
-        ],
-
-        
-        employeeLists: [
-          {
-            $group: {
-              _id: "$skills.skillId",
-              employees: {
-                $push: {
-                  _id: "$_id",
-                  name: "$name",
-                  engagementScore: "$engagementScore"
-                }
-              }
-            }
-          },
-          // Sort employees inside each skill
           {
             $project: {
-              employees: {
-                $slice: [
-                  {
-                    $sortArray: {
-                      input: "$employees",
-                      sortBy: { engagementScore: -1 }
-                    }
-                  },
-                  1000 // take top N employees per skill
-                ]
-              }
+              _id: 0,
+              name: 1,
+              engagementScore: 1
             }
           }
-        ]
+        ],
+        as: "employees"
       }
     },
 
-    
+    // 2) Calculate avg score using ALL employees
     {
-      $project: {
-        data: {
-          $map: {
-            input: "$skillStats",
-            as: "s",
-            in: {
-              skillId: "$$s._id",
-              skillName: "$$s.skillName",
-              avgEngagement: "$$s.avgEngagement",
-              employees: {
-                $let: {
-                  vars: {
-                    matchEmp: {
-                      $arrayElemAt: [
-                        {
-                          $filter: {
-                            input: "$employeeLists",
-                            cond: { $eq: ["$$this._id", "$$s._id"] }
-                          }
-                        },
-                        0
-                      ]
-                    }
-                  },
-                  in: "$$matchEmp.employees"
-                }
-              }
-            }
+      $addFields: {
+        avgEngagement: { $avg: "$employees.engagementScore" }
+      }
+    },
+
+    // 3) Sort employees by engagementScore DESC
+    {
+      $addFields: {
+        employees: {
+          $sortArray: {
+            input: "$employees",
+            sortBy: { engagementScore: -1 }
           }
         }
       }
     },
 
-    // Flatten result
-    { $unwind: "$data" },
-    { $replaceRoot: { newRoot: "$data" } }
+    // // 4) Slice → only top 25 employees in final output
+    // {
+    //   $addFields: {
+    //     employees: { $slice: ["$employees", 25] }
+    //   }
+    // },
+
+    // 5) Sort skills by avgEngagement
+    { $sort: { avgEngagement: -1 } },
+
+    // 6) Final output
+    {
+      $project: {
+        _id: 0,
+        skillName: "$name",
+        avgEngagement: 1,
+        employees: 1
+      }
+    }
+
   ], { allowDiskUse: true });
 }
+
+
+
+
+
 
 
 //engagementreports alternative
@@ -218,48 +295,54 @@ export class EmployeeService {
 
   //ranking by difficulty-task2
  async getEmployeeBySkillDifficulty() {
-  return this.employeeModel.aggregate([
-    // Stage 1: Unwind skills array
-    { $unwind: "$skills" },
+  return this.skillsModel.aggregate([
 
-    // Stage 2: Efficient lookup for skill name
+    // 1) Lookup employees who have this skill
     {
       $lookup: {
-        from: "skills",
-        localField: "skills.skillId",
-        foreignField: "_id",
-        as: "skillDetails",
-        pipeline: [{ $project: { name: 1 } }]
-      }
-    },
-    { $unwind: "$skillDetails" },
-
-    // Stage 3: Group by skill (no sort yet—faster for large data)
-    {
-      $group: {
-        _id: "$skills.skillId",
-        skillName: { $first: "$skillDetails.name" },
-        totalProficiency: { $sum: "$skills.proficiency" },
-        employeeCount: { $sum: 1 },
-        employees: {
-          $push: {
-            name: "$name",
-            proficiency: "$skills.proficiency"
+        from: "employees",
+        let: { skillId: "$_id" },
+        pipeline: [
+          { $unwind: "$skills" },
+          {
+            $match: {
+              $expr: { $eq: ["$skills.skillId", "$$skillId"] }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              name: 1,
+              proficiency: "$skills.proficiency"
+            }
           }
-        }
+        ],
+        as: "employees"
       }
     },
 
-    // Stage 4: Compute average proficiency
+    // 2) Compute totalProficiency & employeeCount
+    {
+      $addFields: {
+        totalProficiency: { $sum: "$employees.proficiency" },
+        employeeCount: { $size: "$employees" }
+      }
+    },
+
+    // 3) Compute avgProficiency
     {
       $addFields: {
         avgProficiency: {
-          $divide: ["$totalProficiency", "$employeeCount"]
+          $cond: [
+            { $eq: ["$employeeCount", 0] },
+            0,
+            { $divide: ["$totalProficiency", "$employeeCount"] }
+          ]
         }
       }
     },
 
-    // Stage 5: Compute difficulty
+    // 4) Compute difficulty
     {
       $addFields: {
         difficulty: {
@@ -268,7 +351,7 @@ export class EmployeeService {
       }
     },
 
-    // Stage 6: Sort employees array per skill (efficient, per-group sort)
+    // 5) Sort employees by proficiency DESC
     {
       $addFields: {
         employees: {
@@ -280,20 +363,20 @@ export class EmployeeService {
       }
     },
 
-    // Stage 7: Final sort by difficulty descending
+    // 6) Sort skills by difficulty DESC
     { $sort: { difficulty: -1 } },
 
-    // Stage 8: Project final fields (clean up)
+    // 7) Final output
     {
       $project: {
         _id: 0,
-        skillName: 1,
+        skillName: "$name",
         difficulty: 1,
         employees: 1
       }
     }
 
-  ], { allowDiskUse: true }); // Safety net for large groups
+  ], { allowDiskUse: true });
 }
 
 //alternative for getEmployeeBySkillDifficulty
