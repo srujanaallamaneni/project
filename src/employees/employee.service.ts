@@ -562,6 +562,39 @@ async getSkillEngagementReport(): Promise<any[]> {
       },
     ]);
   }
+  async getEmployeesRankedBySkillProficiency(): Promise<any[]> {
+    return this.employeeModel.aggregate([
+      {
+    $addFields: {
+      avgSkill: { $avg: "$skills.proficiency" }
+    }
+  },
+  {
+    $match: {
+      avgSkill: { $ne: null }
+    }
+  },
+  { $sort: { position: 1, avgSkill: -1 } },
+  {
+    $group: {
+      _id: "$position",
+      topEmployees: {
+        $push: {
+          name: "$name",
+          avgProficiency: "$avgSkill"
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      position: "$_id",
+      topEmployees: { $slice: ["$topEmployees", 2] }
+    }
+  }
+]);
+  }
   
 //end
   async countByPosition(): Promise<any[]> {
@@ -682,6 +715,7 @@ for (const skill of allSkills) {
 
   return await this.employeeModel.insertMany(employees) as any[];
 }
+
 
 
 
