@@ -45,3 +45,9 @@ export class Employee extends Document {
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
+
+EmployeeSchema.index({position:1});
+EmployeeSchema.index({role:1});
+EmployeeSchema.index({hireDate:1});
+EmployeeSchema.index({engagementScore:-1});
+EmployeeSchema.index({'skills.skillId':1});
