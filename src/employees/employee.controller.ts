@@ -27,6 +27,13 @@ export class EmployeeController {
     return this.employeeService.getEmployeesWithSkills();
   }
 
+  @Get('skillBasedRanking')
+  @ApiOperation({summary:'Get employees ranked by skill proficiency'})
+  @ApiResponse({status:200,description:'Employees ranked by skill proficiency returned successfully'})
+  getEmployeesRankedBySkillProficiency() {
+    return this.employeeService.getEmployeesRankedBySkillProficiency();
+  }
+
 
   @Get('top-engaged') //aggregation eg
   @ApiOperation({summary:'Get top engaged employees'})
